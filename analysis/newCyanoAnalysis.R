@@ -12,7 +12,7 @@ require(foreach)
 require(doParallel)
 require(aRbor)
 require(optimx)
-setwd("~/repos/microbeshifts/analysis")
+#setwd("~/repos/microbeshifts/analysis")
 source("./shiftfunctions.R")
 source("./cyanofunctions.R")
 
@@ -45,19 +45,23 @@ all.species <- unique(c(lba.species, good.species, cyanos.species))
 ## First create a function that matches a given tree to the data and creates the set of bisse functions we want
 dat <- clean.data()
 
-tree <- lbaTrees[[1]][[1]]
-fns <- make.bisse.fns(tree, dat)
-registerDoParallel(cores=8)
-fits.ARDnotime <- fitFns(5, fns$ARD.notime, fns$tdList, res=NULL)
+trees <- list(goodTrees[[1]][[1]], goodTrees[[1]][[2]], goodTrees[[2]][[1]], goodTrees[[2]][[2]], goodTrees[[3]][[1]], goodTrees[[3]][[2]], goodTrees[[4]][[1]], goodTrees[[4]][[2]])
 
-
-#seq <- seq(0.2, 3.6, 0.5); Fns <- fns; fns <- Fns$ARD.R2; starts<-fits.ARDnotime; res=NULL; tds <- fns$tdList
-prof.ARDR2 <- profiles(1, fns$ARD.R2, fns$tdList, fits.ARDnotime, res=NULL, seq=seq(0.1, 3.6, length.out=32), cores=8)
-
-lnL.ARDR2 <- lapply(prof.ARDR2, function(x) sapply(x, function(y) max(y$value)))
-lnL.ARDR2 <- do.call(rbind, lnL.ARDR2)
-cslnL.ARDR2 <- apply(lnL.ARDR2, 2, cumsum)
-plot(seq(3.6, 0.1, length.out=32), rev(cslnL.ARDR2[25,]))
-
-
-
+for(k in 1:length(trees)){
+  tree <- trees[[k]]
+  fns <- make.bisse.fns(tree, dat)
+  registerDoParallel(cores=8)
+  fits.ARDnotime <- fitFns(10, fns$ARD.notime, fns$tdList, res=NULL)
+  fns <- make.bisse.fns(tree, dat)
+  registerDoParallel(cores=8)
+  fits.ARDnotime <- fitFns(5, fns$ARD.notime, fns$tdList, res=NULL)
+  #seq <- seq(0.2, 3.6, 0.5); Fns <- fns; fns <- Fns$ARD.R2; starts<-fits.ARDnotime; res=NULL; tds <- fns$tdList
+  prof.ARDR2 <- profiles(1, fns$ARD.R2, fns$tdList, fits.ARDnotime, res=NULL, seq=seq(0.1, 3.6, length.out=32), cores=11)
+  saveRDS(prof.ARDR2, paste("../output/prof_good_",k,".rds", sep=""))
+}
+  #sprof.ARDR2 <- smooth.profiles(fns$ARD.R2,fns$tdList, prof.ARDR2, seq=seq(0.1, 3.6, length.out=32, cores=8))
+  #lnL.ARDR2 <- lapply(prof.ARDR2[-c(3,4,9, 14, 18, 19,21, 23,24)], function(x) sapply(x, function(y) max(y$value, na.rm=TRUE)))
+  #lnL.ARDR2 <- do.call(rbind, lnL.ARDR2)
+  #cslnL.ARDR2 <- apply(lnL.ARDR2, 2, cumsum)
+  #plot(seq(3.6, 0.1, length.out=32), rev(cslnL.ARDR2[nrow(cslnL.ARDR2),]))
+  
