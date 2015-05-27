@@ -30,12 +30,14 @@ clean.data <- function(){
   dat$Motility[cyanodat$Motility=="2"] <- 1
   dat$Multiseriate_trichomes[cyanodat$Multiseriate_trichomes!=0] <- 1
   dat$Mucilage[cyanodat$Mucilage!=0] <- 1
-  dat$Habit[cyanodat$Habit=="0&1"] <- 0
+  dat$Habit[cyanodat$Habit=="0&1"] <- 1
   dat <- dat[,whichcol]
   dat$Pelagic <- as.numeric(dat$Nonfreshwater_habitat==1 & dat$Habit==0)
   dat$celldiam_mean <- as.numeric(as.numeric(as.character(cyanodat$celldiam_mean))>=3.5)
   return(dat)
 }
+
+
 
 ## 
 make.bisse.fns <- function(tree, dat){
@@ -106,16 +108,18 @@ profiles <- function(n, fns, tds, starts, res=NULL, seq=seq(0.1, 3.7, 0.2), core
   if(is.null(res)){
       res <- list()
       seqFns <- lapply(fns, function(x) lapply(seq, function(y) {ft <<- y; constrain2(x, q10.tc~ft, extra=c("r1", "r2"))}))
-      for(i in 1:nc){
+      for(i in nc){
         tmpfns <- seqFns[[i]]
         tmp <-  mclapply(1:length(seq), function(j) {
           fn <- tmpfns[[j]];
           ft <<- seq[j];
           #fn <- constrain2(fn, q10.tc~ft, extra=c("r1", "r2"))
           startx <- runif(4, 0.5, 2)*c(1, 1, starts[i, 1], starts[i, 2]);
+          startx[startx==0] <- 0.01/100
+          startx[startx>0.5*100] <- 0.5*100
           optimx(startx, fn, method=c("L-BFGS-B", "nlminb", "spg", "bobyqa", "hjkb"), lower=c(0.01,0.01,0.01/100, 0.01/100), upper=c(1000000, 1000000, 0.5*100, 0.5*100), control=list(maximize=TRUE))
           #find.mle(fn, x.init=startx, method="subplex")
-        }, mc.preschedule=TRUE, mc.cores=cores)
+        }, mc.preschedule=FALSE, mc.cores=cores)
         res[[i]] <- tmp
         rm(tmp)     
         gc()
