@@ -1,0 +1,189 @@
+1. Thermophilic  
+ 	0 Not thermophilic  
+ 	1 Thermophilic  
+
+2. Habitat Salinity  
+ 	0 Freshwater  
+ 	1 Brackish  
+ 	2 Marine  
+ 	3 Hypersaline  
+
+3. Freshwater habitat  
+ 	0 Not freshwater  
+ 	1 Freshwater  
+
+4. Non-freshwater habitat  
+ 	0 Not marine, not hypersaline  
+ 	1 Marine or Hypersaline  
+
+5. Akinetes  
+ 	0 Akinetes absent  
+ 	1 Akinetes  
+
+6. Heterocysts  
+ 	0 Heterocysts absent  
+ 	1 Heterocysts  
+
+7. Heterocysts  
+ 	0 Heterocysts absent  
+ 	1 Heterocytes intercalary  
+ 	2 Heterocytes terminal  
+
+8. Terminal heterocysts  
+ 	0 Terminal heterocysts absent  
+ 	1 Terminal heterocysts  
+
+9. Intercalary heterocysts  
+ 	0 Intercalary heterocysts absent  
+ 	1 Intercalary heterocysts  
+
+10. Nitrogen fixation  
+ 	0 Doesn't fix nitrogen  
+ 	1 Fixes nitrogen  
+
+11. Nitrogen fixation type  
+ 	0 Doesn't fix nitrogen  
+ 	1 Aerobic N2 fixation  
+ 	2 ANaerobic N2 fixation  
+
+12. Aerobic nitrogen fixation  
+ 	0 Doesn't fix nitrogen aerobically  
+ 	1 Fixes nitrogen aerobically  
+
+13. Anaerobic nitrogen fixation  
+ 	0 Doesn't fix nitrogen anaerobically  
+ 	1 Fixes nitrogen anaerobically  
+
+14. Morphology  
+ 	0 Unicellular  
+ 	1 Filamentous  
+ 	2 Pseudofilamentous  
+
+15. Polarity of filaments  
+ 	0 Not filamentous  
+ 	1 Isopolar filaments  
+ 	2 Heteropolar filaments  
+
+16. Isopolar filaments  
+ 	0 Isopolar filaments absent  
+ 	1 Isopolar filaments  
+
+17. Heteropolar filaments  
+ 	0 Heteropolar filaments absent  
+ 	1 Heteropolar filaments  
+
+18. Habit  
+ 	0 Planktonic  
+ 	1 Sessile/Benthic  
+
+19. Symbiontic relationships  
+ 	0 Free-living  
+ 	1 Epilithic  
+ 	2 Epiphytic  
+ 	3 Epizoic  
+ 	4 Periphytic  
+ 	5 Endophytic  
+ 	6 Endolithic  
+ 	7 Mats  
+
+20. Free-living  
+ 	0 Not free-living  
+ 	1 Free-living  
+
+21. Mats  
+ 	0 Not associated with microbial mats  
+ 	1 In microbial mats  
+
+22. Epilithic  
+ 	0 Not epilithic  
+ 	1 Epilithic  
+
+23. Endolithic  
+ 	0 Not endolithic  
+ 	1 Endolithic  
+
+24. Epi/Endolithic  
+ 	0 Not epilithic, not endolithic  
+ 	1 Epilithic or Endolithic  
+
+25. Epiphytic  
+ 	0 Not epiphytic  
+ 	1 Epiphytic  
+
+26. Periphytic  
+ 	0 Not periphytic  
+ 	1 Periphytic  
+
+27. Endophytic  
+ 	0 Not endophytic  
+ 	1 Endophytic  
+
+28. Epizoic  
+ 	0 Not epizoic  
+ 	1 Epizoic  
+
+29. Motility  
+ 	0 Motility absent  
+ 	1 Gliding motility  
+ 	2 Rotational motility  
+
+30. Gliding motility  
+ 	0 Gliding motility absent  
+ 	1 Gliding motility  
+
+31. Rotational motility  
+ 	0 Rotational motility absent  
+ 	1 Rotational motility  
+
+32. Hormogonia  
+ 	0 Hormogonia absent  
+ 	1 Hormogonia  
+
+33. Gas vesicles  
+ 	0 Gas vesicles absent  
+ 	1 Gas vesicles  
+
+34. False Branching  
+ 	0 False branching absent  
+ 	1 False branching  
+
+35. True Branching  
+ 	0 True branching absent  
+ 	1 True branching  
+
+36. Fission in multiple planes  
+ 	0 Binary fission only  
+ 	1 Fission in multiple planes  
+
+37. Seriate trichomes  
+ 	0 Trichomes absent  
+ 	1 Uniseriate trichomes  
+ 	2 Multiseriate trichomes  
+ 	3 Multiple trichomes per trichome  
+
+38. Uniseriate trichome  
+ 	0 Uniseriate trichomes absent  
+ 	1 Uniseriate trichomes  
+
+39. Multiseriate trichomes  
+ 	0 Multiseriate trichomes absent  
+ 	1 Multiseriate trichomes  
+
+40. Multiple trichomes per filament  
+ 	0 Multiple trichomes per filaments absent  
+ 	1 Multiple trichomes per filament  
+
+41. Baeocytes  
+ 	0 Baeocytes absent  
+ 	1 Baeocytes  
+
+42. Extracellular sheath  
+ 	0 Sheaths absent  
+ 	1 Sheath  
+
+43. Mucilage  
+ 	0 Mucilage absent  
+ 	1 Mucilage  
+
+
+
