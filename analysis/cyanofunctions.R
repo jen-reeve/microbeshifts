@@ -117,17 +117,19 @@ profiles <- function(n, fns, tds, starts, res=NULL, seq=seq(0.1, 3.7, 0.2), core
           #fn <- constrain2(fn, q10.tc~ft, extra=c("r1", "r2"))
           if(start4){
             startx <- starts[[i]][,1:4];
+            startx[which(startx[,1:2]>=10000)] <- 10000
+            startx[which(startx[,1:2]<=0.01)] <- 0.01+0.0000001
+            startx[which(startx[,3:4]>=0.5*100)] <- 0.5*100-0.1
+            startx[2*nrow(startx)+which(startx[,3:4]<=0.01/100)] <- 0.01/100+0.0000000001
           } else{
-            startx <- runif(4, 0.5, 2)*c(1, 1, starts[i, 1], starts[i, 2]);
+            startx <- cbind(1, 1, starts[i, 1], starts[i, 2]);
+            startx[which(startx[,3:4]>=0.5*100)] <- 0.5*100-0.1
+            startx[2*nrow(startx)+which(startx[,3:4]<=0.01/100)] <- 0.01/100+0.0000000001
           }
-          startx[which(startx[,1:2]>=10000)] <- 10000
-          startx[which(startx[,1:2]<=0.01)] <- 0.01+0.0000001
-          startx[which(startx[,3:4]>=0.5*100)] <- 0.5*100-0.1
-          startx[2*nrow(startx)+which(startx[,3:4]<=0.01/100)] <- 0.01/100+0.0000000001
           if(start4) {
             optimx(startx[j,], fn, method=c("L-BFGS-B", "nlminb", "spg", "bobyqa", "hjkb"), lower=c(0.001,0.001,0.01/100, 0.01/100), upper=c(1000000, 1000000, 0.5*100, 0.5*100), control=list(maximize=TRUE))
           } else {
-            optimx(startx, fn, method=c("L-BFGS-B", "nlminb", "spg", "bobyqa","nmkb", "hjkb"), lower=c(0.001,0.001,0.01/100, 0.01/100), upper=c(1000000, 1000000, 0.5*100, 0.5*100), control=list(maximize=TRUE))
+            optimx(as.vector(startx), fn, method=c("L-BFGS-B", "nlminb", "spg", "bobyqa","nmkb", "hjkb"), lower=c(0.001,0.001,0.01/100, 0.01/100), upper=c(1000000, 1000000, 0.5*100, 0.5*100), control=list(maximize=TRUE))
           }
           #find.mle(fn, x.init=startx, method="subplex")
         }, mc.preschedule=FALSE, mc.cores=cores)
