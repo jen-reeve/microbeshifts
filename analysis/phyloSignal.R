@@ -29,4 +29,19 @@ for(i in 1:length(allTheVariables)) {
  res[i,]<-c(signalResults[[i]][[1]]$lambdaValue, signalResults[[i]][[1]]$chisqTestStat, signalResults[[i]][[1]]$chisqPVal) 
 }  
 
-res
+colnames(res) <- c("Lambda", "Chi-square Value", "p-value")
+res <- data.frame("Trait"=rownames(res), res)
+res$Trait <- as.character(res$Trait)
+res$Trait[3] <- "Nonfreshwater_habitat"
+write.csv(res, file="../output/phylogeneticSignalTable.csv")
+
+prettyres <- res
+prettyres$Lambda <- round(prettyres$Lambda, 3)
+prettyres$Chi.square.Value <- round(prettyres$Chi.square.Value, 2)
+prettyres$pvalue <- ifelse(prettyres$p.value > 0.05, "", "*")
+prettyres$pvalue[prettyres$p.value < 0.01] <- "**"
+prettyres$pvalue[prettyres$p.value < 0.001] <- "***"
+results <- read.csv('../output/ResultsTable.csv')
+fulltable <- merge(results, prettyres[,-3], by="Trait")
+fulltable <- arrange(fulltable, desc(Shift.Cluster), desc(Max.Support), desc(Time.Estimate))
+write.csv(fulltable, "../output/Table1.csv")
