@@ -35,6 +35,9 @@ clean.data <- function(){
   dat <- dat[,whichcol]
   dat$Pelagic <- as.numeric(dat$temp==1 & dat$Habit==0)
   dat$celldiam_mean <- as.numeric(as.numeric(as.character(cyanodat$celldiam_mean))>=3.5)
+  
+  # change Epi/Endolithic to remove slash
+  colnames(dat)[colnames(dat)=="Epi/Endolithic"]<-"Epi_Endolithic"
   return(dat)
 }
 
