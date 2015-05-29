@@ -3,14 +3,14 @@
 ## This function should likely receive some attention from Carrine!
 clean.data <- function(){
   ## Read in character matrix and cell diameter data
-  cyanodat <- read.table("../data/charactermatrix.txt")
+  cyanodat <- read.table("../data/charactermatrix_5_2015.txt")
   celldiam <- read.table("../data/celldiameter.msq")
   rownames(celldiam) <- celldiam[,1]
   celldiam <- celldiam[,-1]
   rownames(cyanodat) <- cyanodat[,1]
   cyanodat <- cyanodat[,-1]
   ## Read in the characters and states metadata
-  states <- readLines("../data/charactersandstates.txt")
+  states <- readLines("../data/charactersandstates_5_2015.txt")
   ## Clean the text so that they can be used as column names
   states[grep(".", states)]
   heads <- strsplit(states[grep(".", states)], "\\. ", perl=TRUE)
@@ -20,7 +20,7 @@ clean.data <- function(){
   cyanodat$celldiam_max <- celldiam[,3]
   cyanodat[cyanodat=="?"] <- NA
   ## Determine what set of traits will be kept
-  whichcol <- c('Thermophilic', 'Nonfreshwater_habitat', 'Akinetes', 'Heterocysts', 'Nitrogen_fixation', 'Morphology',
+  whichcol <- c('Thermophilic', 'Freshwater_habitat','temp', 'Akinetes', 'Heterocysts', 'Nitrogen_fixation', 'Morphology',
               'Habit', 'Freeliving', 'Mats', 'Epi/Endolithic',  'Epiphytic', 'Periphytic', 'Motility', 'Hormogonia', 
               'Gas_vesicles', 'False_Branching', 'True_Branching', 'Fission_in_multiple_planes', 'Uniseriate_trichome', 
               'Multiseriate_trichomes', 'Baeocytes', 'Extracellular_sheath', 'Mucilage', 'celldiam_mean')
@@ -31,8 +31,9 @@ clean.data <- function(){
   dat$Multiseriate_trichomes[cyanodat$Multiseriate_trichomes!=0] <- 1
   dat$Mucilage[cyanodat$Mucilage!=0] <- 1
   dat$Habit[cyanodat$Habit=="0&1"] <- 1
+  dat$temp[cyanodat$temp=="0&1"] <- NA
   dat <- dat[,whichcol]
-  dat$Pelagic <- as.numeric(dat$Nonfreshwater_habitat==1 & dat$Habit==0)
+  dat$Pelagic <- as.numeric(dat$temp==1 & dat$Habit==0)
   dat$celldiam_mean <- as.numeric(as.numeric(as.character(cyanodat$celldiam_mean))>=3.5)
   return(dat)
 }
@@ -102,22 +103,32 @@ fitFns <- function(n, fns, tds, res=NULL){
   return(res)
 }
 
-profiles <- function(n, fns, tds, starts, res=NULL, seq=seq(0.1, 3.7, 0.2), cores=1){
+profiles <- function(n, fns, tds, starts, res=NULL, seq=seq(0.1, 3.7, 0.2), cores=1, start4=FALSE){
   ## Start only over seq1, add seq2 if it looks productive
   nc <- length(fns)
   if(is.null(res)){
       res <- list()
       seqFns <- lapply(fns, function(x) lapply(seq, function(y) {ft <<- y; constrain2(x, q10.tc~ft, extra=c("r1", "r2"))}))
-      for(i in nc){
+      for(i in 1:nc){
         tmpfns <- seqFns[[i]]
         tmp <-  mclapply(1:length(seq), function(j) {
           fn <- tmpfns[[j]];
           ft <<- seq[j];
           #fn <- constrain2(fn, q10.tc~ft, extra=c("r1", "r2"))
-          startx <- runif(4, 0.5, 2)*c(1, 1, starts[i, 1], starts[i, 2]);
-          startx[startx==0] <- 0.01/100
-          startx[startx>0.5*100] <- 0.5*100
-          optimx(startx, fn, method=c("L-BFGS-B", "nlminb", "spg", "bobyqa", "hjkb"), lower=c(0.01,0.01,0.01/100, 0.01/100), upper=c(1000000, 1000000, 0.5*100, 0.5*100), control=list(maximize=TRUE))
+          if(start4){
+            startx <- starts[[i]][,1:4];
+          } else{
+            startx <- runif(4, 0.5, 2)*c(1, 1, starts[i, 1], starts[i, 2]);
+          }
+          startx[which(startx[,1:2]>=10000)] <- 10000
+          startx[which(startx[,1:2]<=0.01)] <- 0.01+0.0000001
+          startx[which(startx[,3:4]>=0.5*100)] <- 0.5*100-0.1
+          startx[2*nrow(startx)+which(startx[,3:4]<=0.01/100)] <- 0.01/100+0.0000000001
+          if(start4) {
+            optimx(startx[j,], fn, method=c("L-BFGS-B", "nlminb", "spg", "bobyqa", "hjkb"), lower=c(0.001,0.001,0.01/100, 0.01/100), upper=c(1000000, 1000000, 0.5*100, 0.5*100), control=list(maximize=TRUE))
+          } else {
+            optimx(startx, fn, method=c("L-BFGS-B", "nlminb", "spg", "bobyqa","nmkb", "hjkb"), lower=c(0.001,0.001,0.01/100, 0.01/100), upper=c(1000000, 1000000, 0.5*100, 0.5*100), control=list(maximize=TRUE))
+          }
           #find.mle(fn, x.init=startx, method="subplex")
         }, mc.preschedule=FALSE, mc.cores=cores)
         res[[i]] <- tmp
@@ -170,4 +181,13 @@ smooth.profiles <- function(fns, tds, prof, seq, cores=1){
     gc()
   }
   return(res)
+}
+
+read.trees.from.mesquite <- function(filename){
+  text <- scan(filename, what="character")
+  trids <- grep("coccus", text)
+  trees <- text[trids]
+  trees <- lapply(trees, function(x) gsub("\\","", x ,fixed=TRUE))
+  trees <- lapply(trees, function(x) read.tree(text = x))
+  return(trees)
 }
