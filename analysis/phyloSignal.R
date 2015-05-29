@@ -19,7 +19,7 @@ for(i in 1:length(allTheVariables)) {
   selectedData<-select_(td,theTrait)
   filteredData<-filter(selectedData, !is.na(selectedData$dat))
 
-  signalResults[[i]]<-physigArbor(filteredData, charType="discrete")
+  signalResults[[i]]<-physigArbor(filteredData, charType="discrete", discreteModelType="ARD")
 }
 
 # create table of results
@@ -45,3 +45,5 @@ results <- read.csv('../output/ResultsTable.csv')
 fulltable <- merge(results, prettyres[,-3], by="Trait")
 fulltable <- arrange(fulltable, desc(Shift.Cluster), desc(Max.Support), desc(Time.Estimate))
 write.csv(fulltable, "../output/Table1.csv")
+
+
