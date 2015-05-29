@@ -19,7 +19,7 @@ for(i in 1:length(allTheVariables)) {
   selectedData<-select_(td,theTrait)
   filteredData<-filter(selectedData, !is.na(selectedData$dat))
 
-  signalResults[[i]]<-physigArbor(filteredData, charType="discrete")
+  signalResults[[i]]<-physigArbor(filteredData, charType="discrete", discreteModelType="ARD")
 }
 
 # create table of results
@@ -29,4 +29,7 @@ for(i in 1:length(allTheVariables)) {
  res[i,]<-c(signalResults[[i]][[1]]$lambdaValue, signalResults[[i]][[1]]$chisqTestStat, signalResults[[i]][[1]]$chisqPVal) 
 }  
 
+
+
 res
+write.csv(res, file="./signal_results.csv")
