@@ -21,22 +21,22 @@ source("./cyanofunctions.R")
 youngFiles <- list.files("../data/Posterior Probability Sampling of Trees/Younger Root MaxAge/")
 youngTrees <- lapply(youngFiles,function(x) read.trees.from.mesquite(paste("../data/Posterior Probability Sampling of Trees/Younger Root MaxAge/", x, sep="")))
 
-lbaFiles <- list.files("../data/Posterior Probability Sampling of Trees/Trees Exhibiting Long Branch Attraction/Posterior probability distribution of time trees/")
-lbaTrees <- lapply(lbaFiles,function(x) read.tree(paste("../data/Posterior Probability Sampling of Trees/Trees Exhibiting Long Branch Attraction/Posterior probability distribution of time trees/", x, sep="")))
+#lbaFiles <- list.files("../data/Posterior Probability Sampling of Trees/Trees Exhibiting Long Branch Attraction/Posterior probability distribution of time trees/")
+#lbaTrees <- lapply(lbaFiles,function(x) read.tree(paste("../data/Posterior Probability Sampling of Trees/Trees Exhibiting Long Branch Attraction/Posterior probability distribution of time trees/", x, sep="")))
 
-goodFiles <- list.files("../data/Posterior Probability Sampling of Trees/Trees Without Known Long Branch Attraction Artifacts/Posterior distribution of trees where branch lengths are scaled to age/")
-goodTrees <- lapply(goodFiles[grep("good", goodFiles)], function(x) read.tree(paste("../data/Posterior Probability Sampling of Trees/Trees Without Known Long Branch Attraction Artifacts/Posterior distribution of trees where branch lengths are scaled to age/", x, sep="")))
-cyanosTrees <- lapply(goodFiles[grep("Cyanos", goodFiles)], function(x) read.tree(paste("../data/Posterior Probability Sampling of Trees/Trees Without Known Long Branch Attraction Artifacts/Posterior distribution of trees where branch lengths are scaled to age/", x, sep="")))
+#goodFiles <- list.files("../data/Posterior Probability Sampling of Trees/Trees Without Known Long Branch Attraction Artifacts/Posterior distribution of trees where branch lengths are scaled to age/")
+#goodTrees <- lapply(goodFiles[grep("good", goodFiles)], function(x) read.tree(paste("../data/Posterior Probability Sampling of Trees/Trees Without Known Long Branch Attraction Artifacts/Posterior distribution of trees where branch lengths are scaled to age/", x, sep="")))
+#cyanosTrees <- lapply(goodFiles[grep("Cyanos", goodFiles)], function(x) read.tree(paste("../data/Posterior Probability Sampling of Trees/Trees Without Known Long Branch Attraction Artifacts/Posterior distribution of trees where branch lengths are scaled to age/", x, sep="")))
 
 ## For Josef: Figure out how these trees all differ
-lba.ntips <- lapply(lbaTrees, function(x) unname(sapply(x, function(y) length(y$tip.label))))
-good.ntips <- lapply(goodTrees, function(x) unname(sapply(x, function(y) length(y$tip.label))))
-cyanos.ntips <- lapply(cyanosTrees, function(x) unname(sapply(x, function(y) length(y$tip.label))))
+#lba.ntips <- lapply(lbaTrees, function(x) unname(sapply(x, function(y) length(y$tip.label))))
+#good.ntips <- lapply(goodTrees, function(x) unname(sapply(x, function(y) length(y$tip.label))))
+#cyanos.ntips <- lapply(cyanosTrees, function(x) unname(sapply(x, function(y) length(y$tip.label))))
 
-lba.species <- unique(unlist(sapply(lbaTrees, function(x) x[[1]]$tip.label)))
-good.species <- unique(unlist(sapply(goodTrees, function(x) x[[1]]$tip.label)))
-cyanos.species <- unique(unlist(sapply(cyanosTrees, function(x) x[[1]]$tip.label)))
-all.species <- unique(c(lba.species, good.species, cyanos.species))
+#lba.species <- unique(unlist(sapply(lbaTrees, function(x) x[[1]]$tip.label)))
+#good.species <- unique(unlist(sapply(goodTrees, function(x) x[[1]]$tip.label)))
+#cyanos.species <- unique(unlist(sapply(cyanosTrees, function(x) x[[1]]$tip.label)))
+#all.species <- unique(c(lba.species, good.species, cyanos.species))
 
 
 ## # Tasks:
@@ -47,10 +47,12 @@ all.species <- unique(c(lba.species, good.species, cyanos.species))
 ## Create profile plots over the posterior of trees
 ## First create a function that matches a given tree to the data and creates the set of bisse functions we want
 dat <- clean.data()
-trees <- list(youngTrees[[1]][[1]], youngTrees[[2]][[1]])
+trees <- c(youngTrees[[1]][seq(1,100, length.out=10)], youngTrees[[2]][seq(1,100, length.out=10)])
+trees <- lapply(trees, function(x){x$edge.length <- x$edge.length/1000; x})
+TLs <- sapply(1:length(trees), function(x) max(branching.times(trees[[x]])))
 
 Fns <- lapply(trees, function(x) make.bisse.fns(x, dat))
-registerDoParallel(cores=8)
+registerDoParallel(cores=5)
 fits.ARDnotime <- lapply(Fns, function(fns) fitFns(5, fns$ARD.notime, fns$tdList, res=NULL))
 
 load("./new.researchFull.rds")
@@ -66,28 +68,35 @@ starts[[which(sapply(starts, length)==0)]] <- starts[[3]]
 starts <- lapply(starts, function(x) x[nrow(x):1,])
 
 #seq <- seq(0.2, 3.6, 0.5); Fns <- fns; fns <- Fns$ARD.R2; starts<-fits.ARDnotime; res=NULL; tds <- fns$tdList
-seq <- seq(0.1, 3.7, length.out=37)
-fns <- Fns[[1]]
-prof.tree1 <- profiles(1, fns$ARD.R2, fns$tdList, starts, res=NULL, seq=seq(0.1, 3.7, length.out=37), cores=8, start4=TRUE)
-fns <- Fns[[2]]
-prof.tree2 <- profiles(1, fns$ARD.R2, fns$tdList, starts, res=NULL, seq=seq(0.1, 3.7, length.out=37), cores=8, start4=TRUE)
+seqs <- lapply(1:length(TLs), function(x) seq(0.1, x, length.out=37))
+profs <- list()
+for(i in 1:length(Fns)){
+  fns <- Fns[[i]]
+  profs[[i]] <- profiles(1, fns$ARD.R2, fns$tdList, starts, res=NULL, seq=seq(0.1, TLs[[i]], length.out=37), cores=8, start4=TRUE) 
+}
+
+#fns <- Fns[[1]]
+#prof.tree1 <- profiles(1, fns$ARD.R2, fns$tdList, starts, res=NULL, seq=seq(0.1, 3.7, length.out=37), cores=8, start4=TRUE)
+#fns <- Fns[[2]]
+#prof.tree2 <- profiles(1, fns$ARD.R2, fns$tdList, starts, res=NULL, seq=seq(0.1, 3.7, length.out=37), cores=8, start4=TRUE)
 #saveRDS(prof.tree1, "../output/proftree1.rds")
 #saveRDS(prof.tree2, "../output/proftree2.rds")
-prof.tree1 <- readRDS("../output/proftree1.rds")
-prof.tree2 <- readRDS("../output/proftree2.rds")
+#prof.tree1 <- readRDS("../output/proftree1.rds")
+#prof.tree2 <- readRDS("../output/proftree2.rds")
+saveRDS(profs, "../output/profs_20youngTrees.rds")
 
-tmp1 <- sapply(prof.tree1, function(x) sapply(x, function(y) y[which(y[,5]==max(y[,5])),5][1]))
-tmp2 <- sapply(prof.tree2, function(x) sapply(x, function(y) y[which(y[,5]==max(y[,5])),5][1]))
-tmp1 <- apply(tmp1, 2, function(x) x-x[37])
-tmp2 <- apply(tmp2, 2, function(x) x-x[37])
-tmp1[tmp1 < 0] <- 0
-tmp2[tmp2 < 0] <- 0
-cs1 <- apply(tmp1, 1, cumsum)
-cs2 <- apply(tmp2, 1, cumsum)
-plot(seq,cs1[26,], xlim=c(2.7,0), type="n", ylim=c(0,35))
-lines(seq, cs1[26,], col="red")
-lines(seq, cs2[26,], col="blue")
-abline(v=c(0.7,1.7))
+#tmp1 <- sapply(prof.tree1, function(x) sapply(x, function(y) y[which(y[,5]==max(y[,5])),5][1]))
+#tmp2 <- sapply(prof.tree2, function(x) sapply(x, function(y) y[which(y[,5]==max(y[,5])),5][1]))
+#tmp1 <- apply(tmp1, 2, function(x) x-x[37])
+#tmp2 <- apply(tmp2, 2, function(x) x-x[37])
+#tmp1[tmp1 < 0] <- 0
+#tmp2[tmp2 < 0] <- 0
+#cs1 <- apply(tmp1, 1, cumsum)
+#cs2 <- apply(tmp2, 1, cumsum)
+#plot(seq,cs1[26,], xlim=c(2.7,0), type="n", ylim=c(0,35))
+#lines(seq, cs1[26,], col="red")
+#lines(seq, cs2[26,], col="blue")
+#abline(v=c(0.7,1.7))
 
 #habitat1 <- prof.tree1[which(newnames %in% c("Freshwater_habitat", "Nonfreshwater_habitat"))]
 #habitat2 <- prof.tree2[which(newnames %in% c("Freshwater_habitat", "Nonfreshwater_habitat"))]
@@ -172,13 +181,13 @@ abline(v=c(0.7,1.7))
 #dev.off()
 
 ## Figures
-sumRes <- lapply(oldres, summarizeProfile)
-o <- order(sapply(sumRes, function(x) x$maxT))
-sumRes <- sumRes[o]
+#sumRes <- lapply(oldres, summarizeProfile)
+#o <- order(sapply(sumRes, function(x) x$maxT))
+#sumRes <- sumRes[o]
 
 ### Shift Support Figure
-pdf("../output/shiftsupportFigure1.pdf")
-shiftFigure <- function(sumRes){
+#pdf("../output/shiftsupportFigure1.pdf")
+#shiftFigure <- function(sumRes){
   par(mar=c(3,5,12,0.5))
   plot(c(1, length(sumRes)+2), c(3.8, 0), ylim=c(3.8, 0), type="n", ylab="Time (billion years before present)",  xaxt="n")
   axis(3, at=c(1:length(names(sumRes)),27), labels=gsub("_", " ", c(names(sumRes), "Cumulative")), las=3, cex=0.5)
@@ -201,16 +210,16 @@ shiftFigure <- function(sumRes){
   abline(h=seq(0.1,3.7,0.1)[peaks], lty=2)
   #points(rep(27,2), seq(0.1,3.7,0.1)[which(cs>18)],cex=1, pch=21, col="black",bg="red")
 }
-shiftFigure(sumRes)
-dev.off()
+#shiftFigure(sumRes)
+#dev.off()
 
 ### Write a table of results
-o <- order(sapply(sumRes, function(x) x$dlnL))
-sumRes <- sumRes[rev(o)]
-timeslice <- sapply(sumRes, function(x) 3.8-x$maxT)
-shiftcluster <- rep("", length(timeslice))
-shiftcluster[abs(timeslice-0.6) <=0.2] <- "NeoProterozoic"
-shiftcluster[abs(timeslice-1.8) <=0.2] <- "PaleoProterozoic"
-sumTable <- data.frame("Trait"=names(sumRes), "Max Support"=sapply(sumRes, function(x) x$dlnL), "Time Estimate"=timeslice, "Shift Cluster"=shiftcluster)
-o <- order(sumTable$Shift.Cluster, sumTable[,2], decreasing = TRUE)
-write.csv(sumTable[o,], "../output/ResultsTable.csv",row.names=FALSE)
+#o <- order(sapply(sumRes, function(x) x$dlnL))
+#sumRes <- sumRes[rev(o)]
+#timeslice <- sapply(sumRes, function(x) 3.8-x$maxT)
+#shiftcluster <- rep("", length(timeslice))
+#shiftcluster[abs(timeslice-0.6) <=0.2] <- "NeoProterozoic"
+#shiftcluster[abs(timeslice-1.8) <=0.2] <- "PaleoProterozoic"
+#sumTable <- data.frame("Trait"=names(sumRes), "Max Support"=sapply(sumRes, function(x) x$dlnL), "Time Estimate"=timeslice, "Shift Cluster"=shiftcluster)
+#o <- order(sumTable$Shift.Cluster, sumTable[,2], decreasing = TRUE)
+#write.csv(sumTable[o,], "../output/ResultsTable.csv",row.names=FALSE)
