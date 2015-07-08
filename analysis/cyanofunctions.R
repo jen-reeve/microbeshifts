@@ -35,7 +35,7 @@ clean.data <- function(){
   dat <- dat[,whichcol]
   dat$Pelagic <- as.numeric(dat$temp==1 & dat$Habit==0)
   dat$celldiam_mean <- as.numeric(as.numeric(as.character(cyanodat$celldiam_mean))>=3.5)
-  
+  names(dat)[which(names(dat)=="temp")] <- "Nonfreshwater_habitat"
   # change Epi/Endolithic to remove slash
   colnames(dat)[colnames(dat)=="Epi/Endolithic"]<-"Epi_Endolithic"
   return(dat)
@@ -195,4 +195,61 @@ read.trees.from.mesquite <- function(filename){
   trees <- lapply(trees, function(x) gsub("\\","", x ,fixed=TRUE))
   trees <- lapply(trees, function(x) read.tree(text = x))
   return(trees)
+}
+
+
+summarizeProfile <- function(prof){
+  dlnL <- max(prof[,1]-min(prof[,1]))
+  maxT <- seq(0.1,3.7,0.1)[which(prof[,1]==max(prof[,1]))]
+  slnL <- prof[,1]-min(prof[,1])
+  list(dlnL=dlnL, maxT=maxT, slnL=slnL)
+}
+
+makeTransparent <- function (someColor, alpha = 100) {
+  newColor <- col2rgb(someColor)
+  apply(newColor, 2, function(curcoldata) {
+    rgb(red = curcoldata[1], green = curcoldata[2], blue = curcoldata[3], 
+        alpha = alpha, maxColorValue = 255)
+  })
+}
+
+dlnLColors <- function(x, col, max=6, n=255){
+  ind <- floor(x/max*n)
+  sapply(ind, function(x) makeTransparent(col, alpha=x))
+}
+
+## Process a list of fit objects for each trait
+processFits <- function(fits, names="all"){
+  if(names=="all"){
+    traits <- 1:length(fits)
+  } else {
+    traits <- names
+  }
+  results <- fits[traits]
+  res <- lapply(results, function(trait) do.call(rbind, lapply(1:length(trait), function(time) c(trait[[time]]$lnLik, trait[[time]]$par))))
+  cums <- apply(sapply(res, function(x) x[,1]), 1, sum)
+  cums <- cums-min(cums)
+  sumRes <- lapply(res, summarizeProfile)
+  names(sumRes) <- gsub("/", "_", names(sumRes), fixed=TRUE)
+  starts <- lapply(res, function(x) x[,-1])
+  names(starts) <- gsub("/", "_", names(starts), fixed=TRUE)
+  out <- list(profile=cums,  traitSums=sumRes, estimates=starts)
+  return(out)
+}
+
+##Process a list of optimx results for each trait
+processProfiles <- function(profiles, names="all"){
+  if(names=="all"){
+    traits <- 1:length(profiles)
+  } else {
+    traits <- names
+  }
+  results <- profiles[traits]
+  lnLs <- lapply(results, function(x) sapply(x, function(y) max(y$value, na.rm=TRUE)))
+  slnLs <- lapply(lnLs, function(x) x-min(x))
+  maxT <- lapply(slnLs, function(x) which(x==max(x)))
+  dlnL <- lapply(slnLs, function(x) max(x))
+  traitSums <- lapply(1:length(traits), function(x) list(dlnL=dlnL[[x]], maxT=maxT[[x]], slnL=slnLs[[x]]))
+  cums <- sapply(1:length(slnLs[[1]]), function(x) sum(sapply(slnLs, function(y) y[x])))
+   
 }
