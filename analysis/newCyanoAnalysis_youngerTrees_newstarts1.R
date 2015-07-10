@@ -67,9 +67,11 @@ starts <- oldstarts[match(newnames, oldnames)]
 starts[[which(sapply(starts, length)==0)]] <- starts[[3]]
 starts <- lapply(starts, function(x) x[nrow(x):1,])
 starts1 <- readRDS("../output/newstarts1.rds")
-starts1 <- lapply(starts1, as.data.frame)
+starts1 <- lapply(starts1, as.matrix)
 names(starts1) <- names(starts)
-
+rm(new.researchFull)
+rm(oldresults)
+gc()
 
 #seq <- seq(0.2, 3.6, 0.5); Fns <- fns; fns <- Fns$ARD.R2; starts<-fits.ARDnotime; res=NULL; tds <- fns$tdList
 seqs <- lapply(1:length(TLs), function(x) seq(0.1, TLs[x], length.out=37))
