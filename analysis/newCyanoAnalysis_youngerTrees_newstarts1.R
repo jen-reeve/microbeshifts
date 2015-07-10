@@ -66,13 +66,17 @@ oldnames <- gsub("/", "_", oldnames, fixed=TRUE)
 starts <- oldstarts[match(newnames, oldnames)]
 starts[[which(sapply(starts, length)==0)]] <- starts[[3]]
 starts <- lapply(starts, function(x) x[nrow(x):1,])
+starts1 <- readRDS("../output/newstarts1.rds")
+starts1 <- lapply(starts1, as.data.frame)
+names(starts1) <- names(starts)
+
 
 #seq <- seq(0.2, 3.6, 0.5); Fns <- fns; fns <- Fns$ARD.R2; starts<-fits.ARDnotime; res=NULL; tds <- fns$tdList
 seqs <- lapply(1:length(TLs), function(x) seq(0.1, TLs[x], length.out=37))
 profs <- list()
 for(i in 1:length(Fns)){
   fns <- Fns[[i]]
-  profs[[i]] <- profiles(1, fns$ARD.R2, fns$tdList, starts, res=NULL, seq=seq(0.1, TLs[[i]], length.out=37), cores=16, start4=TRUE) 
+  profs[[i]] <- profiles(1, fns$ARD.R2, fns$tdList, starts1, res=NULL, seq=seq(0.1, TLs[[i]], length.out=37), cores=10, start4=TRUE) 
 }
 
 #fns <- Fns[[1]]
@@ -83,8 +87,8 @@ for(i in 1:length(Fns)){
 #saveRDS(prof.tree2, "../output/proftree2.rds")
 #prof.tree1 <- readRDS("../output/proftree1.rds")
 #prof.tree2 <- readRDS("../output/proftree2.rds")
-saveRDS(profs, "../output/profs_20youngTrees.rds")
-profs <- readRDS("../output/profs_20youngTrees.rds")
+saveRDS(profs, "../output/profs_20youngTrees_starts1.rds")
+profs <- readRDS("../output/profs_20youngTrees_starts1.rds")
 
 profiles <- lapply(profs, function(x) lapply(x, function(y) do.call(rbind, lapply(y, function(z) z[which(z$value==max(z$value)), c(5, 1:4)]))))
 sumprof <- lapply(profiles, function(x) lapply(lapply(x, function(y) cbind(y$value)), summarizeProfile))
@@ -100,13 +104,18 @@ lapply(1:length(cumsums), function(x) lines(seqs[[x]], cumsums[[x]], col="gray60
 lines(allcstime, allcs, col="black", lwd=5, lty=2)
 abline(v=c(0.53, 1.68))
 
-tmp <- lapply(1:length(profiles), function(tr) lapply(1:length(profiles[[1]]), function(trait) data.frame(profiles[[tr]][[trait]][1:37,],tree=tr, trait=trait, seq=1:37)))
-tmp <- lapply(1:length(tmp), function(x) do.call(rbind, tmp[[x]]))
-tmp <- do.call(rbind, tmp)
-tmp <- group_by(tmp, trait, seq)
-newstarts <- summarize(tmp, max(value), r1[value==max(value)], r2[value==max(value)], q01.y0[value==max(value)], q10.y0[value==max(value)])
-colnames(newstarts) <- c("trait", "seq", "value", "r1", "r2", "q01", "q10")
-saveRDS(newstarts, "../output/newstarts.rds")
+#tmp <- lapply(1:length(profiles), function(tr) lapply(1:length(profiles[[1]]), function(trait) data.frame(profiles[[tr]][[trait]][1:37,],tree=tr, trait=trait, seq=1:37)))
+#tmp <- lapply(1:length(tmp), function(x) do.call(rbind, tmp[[x]]))
+#tmp <- do.call(rbind, tmp)
+#tmp <- group_by(tmp, trait, seq)
+#newstarts <- summarize(tmp, max(value), r1[value==max(value)], r2[value==max(value)], q01.y0[value==max(value)], q10.y0[value==max(value)])
+#colnames(newstarts) <- c("trait", "seq", "value", "r1", "r2", "q01", "q10")
+#starts.new <- lapply(1:26, function(x) newstarts[newstarts$trait==x,4:7])
+#starts1 <- lapply(1:26, function(x) rbind(starts.new[[x]][2:37,], starts.new[[x]][37,]))
+#starts2 <- lapply(1:26, function(x) rbind(starts.new[[x]][1,], starts.new[[x]][1:36,]))
+#saveRDS(starts1, "../output/newstarts1.rds")
+#saveRDS(starts2, "../output/newstarts2.rds")
+
 
 #tmp1 <- sapply(prof.tree1, function(x) sapply(x, function(y) y[which(y[,5]==max(y[,5])),5][1]))
 #tmp2 <- sapply(prof.tree2, function(x) sapply(x, function(y) y[which(y[,5]==max(y[,5])),5][1]))

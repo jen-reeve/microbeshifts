@@ -46,7 +46,7 @@ clean.data <- function(){
 ## 
 make.bisse.fns <- function(tree, dat){
   ## set branch lengths to by
-  tree$edge.length <- tree$edge.length/1000
+  #tree$edge.length <- tree$edge.length/1000
   
   ## Combine tree 
   tdcy <- make.treedata(tree, dat, name_column=0)
@@ -66,9 +66,10 @@ make.bisse.fns <- function(tree, dat){
   bisse.fns <- lapply(1:nc, function(x) make.bisse.t(tdcyList[[x]]$phy, setNames(tdcyList[[x]]$dat[[1]], attributes(tdcyList[[x]])$tip.label), functions=c(rep("constant.t",4), rep("stepf.t", 2)))) 
   notime.fns <- lapply(1:nc, function(x) make.bisse(tdcyList[[x]]$phy, setNames(tdcyList[[x]]$dat[[1]], attributes(tdcyList[[x]])$tip.label)))
   ARD.notime.fns <- lapply(notime.fns, function(x) constrain(x, lambda0~lambda, lambda1~lambda, mu0~mu, mu1~mu))
+  ARD.R1.fns <- lapply(bisse.fns, function(x) constrain2(x, lambda0~lambda, lambda1~lambda, mu0~mu, mu1~mu, q10.y1~r*q10.y0, q01.y1~r*q01.y0, q01.tc ~ q10.tc, extra=c('r')))
   ARD.R2.fns <- lapply(bisse.fns, function(x) constrain2(x, lambda0~lambda, lambda1~lambda, mu0~mu, mu1~mu, q10.y1~r1*q10.y0, q01.y1~r2*q01.y0, q01.tc ~ q10.tc, extra=c('r1', 'r2')))
   
-  fns <- list(bisse=bisse.fns, notime=notime.fns, ARD.notime=ARD.notime.fns, ARD.R2=ARD.R2.fns, tdList=tdcyList)
+  fns <- list(bisse=bisse.fns, notime=notime.fns, ARD.notime=ARD.notime.fns, ARD.R1=ARD.R1.fns, ARD.R2=ARD.R2.fns, tdList=tdcyList)
   return(fns)
   
 }
@@ -201,7 +202,7 @@ read.trees.from.mesquite <- function(filename){
 summarizeProfile <- function(prof){
   dlnL <- max(prof[,1]-min(prof[,1]))
   maxT <- seq(0.1,3.7,0.1)[which(prof[,1]==max(prof[,1]))]
-  slnL <- prof[,1]-min(prof[,1])
+  slnL <- prof[,1]-min(prof[37,1])[1]
   list(dlnL=dlnL, maxT=maxT, slnL=slnL)
 }
 
