@@ -200,7 +200,7 @@ read.trees.from.mesquite <- function(filename){
 
 
 summarizeProfile <- function(prof){
-  dlnL <- max(prof[,1]-min(prof[,1]))
+  dlnL <- max(prof[,1]-min(prof[37,1]))
   maxT <- seq(0.1,3.7,0.1)[which(prof[,1]==max(prof[,1]))]
   slnL <- prof[,1]-min(prof[37,1])[1]
   list(dlnL=dlnL, maxT=maxT, slnL=slnL)
@@ -253,4 +253,23 @@ processProfiles <- function(profiles, names="all"){
   traitSums <- lapply(1:length(traits), function(x) list(dlnL=dlnL[[x]], maxT=maxT[[x]], slnL=slnLs[[x]]))
   cums <- sapply(1:length(slnLs[[1]]), function(x) sum(sapply(slnLs, function(y) y[x])))
    
+}
+
+plot.asrR2 <- function(pars, tree, dat, fn,...){
+  fns <- make.bisse.fns(tree, data.frame("trait"=dat))
+  fn <- fns$ARD.R2[[1]]
+  td <- fns$tdList[[1]]
+  #basicARDfn <- make.bisse.t(tree, setNames(dat, tree$tip.label), functions=c(rep("constant.t",4), rep("stepf.t", 2)))
+  #pars <- researchFull[[i]][[which(resliksFull[,i]==max(resliksFull[,i]))]]$par.full
+  asr <- list(t(asr.marginal(fn, pars)))
+  TH <- max(branching.times(tree))
+  class(asr) <- c("asrArbor", "list")
+  attributes(asr)$charType <- "discrete"
+  attributes(asr)$aceType <- "poopboobs"
+  attributes(asr)$td <- td
+  attributes(asr)$na.drop <- NULL
+  attributes(asr)$charStates <- list(c("0","1"))
+  plot(asr, type="fan", cex=0.5, label.offset=0.5, pal=colorRampPalette(c("gray10", "gray90")), ...)
+  draw.circle(0, 0, TH-pars[5], lwd=1, border=makeTransparent('gray10', alpha=100))
+  
 }
