@@ -112,7 +112,7 @@ pdf("../output/simulation_studies.pdf")
   res <- do.call(cbind, res)
   res <- apply(res, 2, function(x) x-min(x))
   plot(c(3.8, 0), c(0, 2), type="n", xlim=c(3.8,0))
-  lapply(1:ncol(res),function(x) lines(seq(0.1, TL[[x]]-0.1, 0.1), res[,x], col=x+1))
+  lapply(1:ncol(res),function(x) lines(seq(0.1, TL[[x]]-0.1, length.out=length(res[,x])), res[,x], col=x+1))
   abline(v=0.6)
 dev.off()
 

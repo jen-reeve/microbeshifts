@@ -255,8 +255,8 @@ processProfiles <- function(profiles, names="all"){
    
 }
 
-plot.asrR2 <- function(pars, tree, dat, fn,...){
-  fns <- make.bisse.fns(tree, data.frame("trait"=dat))
+plot.asrR2 <- function(pars, tree, dat, fn, cols=c("gray10", "gray90"), ...){
+  fns <- make.bisse.fns(tree, dat)
   fn <- fns$ARD.R2[[1]]
   td <- fns$tdList[[1]]
   #basicARDfn <- make.bisse.t(tree, setNames(dat, tree$tip.label), functions=c(rep("constant.t",4), rep("stepf.t", 2)))
@@ -269,7 +269,8 @@ plot.asrR2 <- function(pars, tree, dat, fn,...){
   attributes(asr)$td <- td
   attributes(asr)$na.drop <- NULL
   attributes(asr)$charStates <- list(c("0","1"))
-  plot(asr, type="fan", cex=0.5, label.offset=0.5, pal=colorRampPalette(c("gray10", "gray90")), ...)
-  draw.circle(0, 0, TH-pars[5], lwd=1, border=makeTransparent('gray10', alpha=100))
+  plot(asr, cex=0.5, label.offset=0.1, pal=colorRampPalette(cols), ...)
+  abline(v=TH-pars[5], lwd=2, lty=2)
+  #draw.circle(0, 0, TH-pars[5], lwd=1, border=makeTransparent('gray10', alpha=100))
   
 }
