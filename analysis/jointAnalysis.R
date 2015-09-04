@@ -57,9 +57,9 @@ TLs <- sapply(1:length(trees), function(x) max(branching.times(trees[[x]])))
 
 Fns <- lapply(trees, function(x) make.bisse.fns(x, dat1))
 registerDoParallel(cores=5)
-fits.ARDnotime <- lapply(Fns, function(fns) fitFns(5, fns$ARD.notime, fns$tdList, res=NULL))
-#saveRDS(fits.ARDnotime, file="../output/fits.ARDnotime.rds")
-#fits.ARDnotime <- readRDS("../output/fits.ARDnotime.rds")
+#fits.ARDnotime <- lapply(Fns, function(fns) fitFns(5, fns$ARD.notime, fns$tdList, res=NULL))
+#saveRDS(fits.ARDnotime, file="../output/fits.ARDnotime.joint.rds")
+fits.ARDnotime <- readRDS("../output/fits.ARDnotime.joint.rds")
 starts <- lapply(fits.ARDnotime, function(x) x[,1:2])
 
 fns <- lapply(1:length(trees), function(x) Fns[[x]]$ARD.R1)
@@ -69,7 +69,7 @@ rm(Fns)
 ## Define joint likelihood function
 #Parameter order c(t, r, q01.1, q1.10.1, ..., q01.22, q10.22); total of 46 parameters
 ntrait <- ncol(dat1)
-startx <-lapply(1:length(fns), function(x) c(1.35, 0, unlist(do.call(c, lapply(1:nrow(starts[[x]]), function(y) starts[[x]][y,])))))
+startx <-lapply(1:length(fns), function(x) c(runif(1,0.3,2.3), 0, unlist(do.call(c, lapply(1:nrow(starts[[x]]), function(y) starts[[x]][y,])))))
 liks <- list()
 make.liks <- function(i) {
   fx <- fns[[i]]
@@ -79,7 +79,7 @@ make.liks <- function(i) {
     qs <- (matrix(pars[3:length(pars)], ncol=2, byrow=TRUE))
     pars2 <- cbind(r, qs, time)
     lnLs <- sapply(1:length(fx), function(x) fx[[x]](pars2[x,]))
-    res <- sum(lnLs)
+    res <- -1*sum(lnLs)
     return(res)
     }
   return(lik)
@@ -99,8 +99,12 @@ liks <- lapply(1:length(fns), function(x) make.liks(x))
 #    attributes(x)$upper <- c(max(TLs), log(1000000), log(rep(0.5*100, ntrait*2))); x})
 
 ## Optimize joint likelihood functions
-i <- 1
-tmp <- optimx(startx[[i]], liks[[i]], method=c("nlminb"), lower=c(0, log(0.001), rep(0, ntrait*2)), upper=c(max(TLs), log(1000000), rep(0.5*100, ntrait*2)), control=list(maximize=TRUE))
+for(i in 1:length(liks)){
+  tmp <- optimx(startx[[i]], liks[[i]], lower=c(0, log(0.001), rep(0, ntrait*2)), upper=c(max(TLs), log(1000000),  rep(0.5*100, ntrait*2)))
+  saveRDS(tmp, file=paste("../output/jointoptim",i,".rds",sep=""))
+} 
+
+fits.ARDnotime[[i]]$lnL-lnLs
 
 #tmp <- find.mle(liks[[i]], x.init=attributes(liks[[i]])$starter(), method="optim",  lower=attributes(liks[[i]])$lower, upper=attributes(liks[[i]])$upper)
 
