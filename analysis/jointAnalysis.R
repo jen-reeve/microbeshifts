@@ -6,8 +6,6 @@ require(phytools)
 require(diversitree)
 require(geiger)
 require(devtools)
-require(testthat)
-require(roxygen2)
 require(rncl)
 require(foreach)
 require(doParallel)
@@ -100,11 +98,11 @@ liks <- lapply(1:length(fns), function(x) make.liks(x))
 
 ## Optimize joint likelihood functions
 for(i in 1:length(liks)){
-  tmp <- optimx(startx[[i]], liks[[i]], lower=c(0, log(0.001), rep(0, ntrait*2)), upper=c(max(TLs), log(1000000),  rep(0.5*100, ntrait*2)))
+  tmp <- optimx(startx[[i]], liks[[i]], lower=c(0, log(0.001), rep(0, ntrait*2)), upper=c(max(TLs), log(1000000),  rep(0.5*100, ntrait*2)), control=list(all.methods=TRUE))
   saveRDS(tmp, file=paste("../output/jointoptim",i,".rds",sep=""))
 } 
 
-fits.ARDnotime[[i]]$lnL-lnLs
+#fits.ARDnotime[[i]]$lnL-lnLs
 
 #tmp <- find.mle(liks[[i]], x.init=attributes(liks[[i]])$starter(), method="optim",  lower=attributes(liks[[i]])$lower, upper=attributes(liks[[i]])$upper)
 
