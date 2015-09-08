@@ -54,9 +54,9 @@ trees <- lapply(trees, function(x){x$edge.length <- x$edge.length/1000; x})
 TLs <- sapply(1:length(trees), function(x) max(branching.times(trees[[x]])))
 
 Fns <- lapply(trees, function(x) make.bisse.fns(x, dat1))
-registerDoParallel(cores=5)
-#fits.ARDnotime <- lapply(Fns, function(fns) fitFns(5, fns$ARD.notime, fns$tdList, res=NULL))
-#saveRDS(fits.ARDnotime, file="../output/fits.ARDnotime.joint.rds")
+registerDoParallel(cores=10)
+fits.ARDnotime <- lapply(Fns, function(fns) fitFns(20, fns$ARD.notime, fns$tdList, res=NULL))
+saveRDS(fits.ARDnotime, file="../output/fits.ARDnotime.joint.rds")
 fits.ARDnotime <- readRDS("../output/fits.ARDnotime.joint.rds")
 starts <- lapply(fits.ARDnotime, function(x) x[,1:2])
 
@@ -95,13 +95,31 @@ liks <- lapply(1:length(fns), function(x) make.liks(x))
 #      c(runif(1,0.5, min(TLs)-0.5), rnorm(2*ntrait+1, 0, 0.5))
 #    }; attributes(x)$lower <- c(0, log(0.001), log(rep(0.01/100, ntrait*2)));
 #    attributes(x)$upper <- c(max(TLs), log(1000000), log(rep(0.5*100, ntrait*2))); x})
+registerDoParallel(cores=10)
 
 ## Optimize joint likelihood functions
 for(i in 1:length(liks)){
-  tmp <- optimx(startx[[i]], liks[[i]], lower=c(0, log(0.001), rep(0, ntrait*2)), upper=c(max(TLs), log(1000000),  rep(0.5*100, ntrait*2)), control=list(all.methods=TRUE))
-  saveRDS(tmp, file=paste("../output/jointoptim",i,".rds",sep=""))
+  tmp <- foreach(j=c(i, sample((1:20)[-i], 9, replace=FALSE))) %dopar% try(optimx(startx[[j]], liks[[i]], lower=c(0, log(0.001), rep(0, ntrait*2)), upper=c(max(TLs), log(1000000),  rep(0.5*100, ntrait*2)), control=list(all.methods=TRUE)))
+  saveRDS(tmp, file=paste("../output/jointoptim.",i,".rds",sep=""))
 } 
 
+#outs <- list()
+#for(i in 1:11){
+#  outs[[i]] <- readRDS(paste("../output/jointoptim",i,".rds", sep=""))
+#}
+
+#all <- do.call(rbind, outs)
+#pars <- as.vector(unlist(all[which(all$value==min(all$value)), 1:50]))#
+
+#tt <- sapply(liks, function(x) x(pars))
+#tmp <- lapply(liks, function(y) sapply(seq(1, 2.6, 0.1), function(x){pp <- pars; pp[1] <- x; y(pp)}))
+
+
+#lnLs <- sapply(fits.ARDnotime, function(x) sum(x$lnL))
+#tmp.adj <- lapply(1:length(tmp), function(x) -tmp[[x]]-lnLs[[x]])
+#plot(seq(1, 2.6, 0.1), tmp[[1]], type="n", ylim=c(-20, 40))
+#lapply(1:length(tmp.adj), function(x) lines(seq(1,2.6,0.1), tmp.adj[[x]], col=x))
+#sapply(tmp.adj, function(x) seq(1,2.6,0.1)[which(x==max(x))])
 #fits.ARDnotime[[i]]$lnL-lnLs
 
 #tmp <- find.mle(liks[[i]], x.init=attributes(liks[[i]])$starter(), method="optim",  lower=attributes(liks[[i]])$lower, upper=attributes(liks[[i]])$upper)
