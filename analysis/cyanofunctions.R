@@ -58,7 +58,7 @@ make.bisse.fns <- function(tree, dat){
   
   ## Set global birth-death parameters
   bd.lik <- make.bd(tdcy$phy)
-  bd.est <- find.mle(bd.lik, x.init=c(5,0))
+  bd.est <- find.mle(bd.lik, x.init=c(0.5,0.5))
   lambda <<- bd.est$par[1]
   mu <<- bd.est$par[2]
   

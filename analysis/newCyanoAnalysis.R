@@ -50,7 +50,7 @@ dat <- clean.data()
 tree <- lbaTrees[[2]][[1]]
 trees <- list(goodTrees[[1]][1:2], goodTrees[[2]][1:2], goodTrees[[3]][1:2], goodTrees[[4]][1:2])
 
-fns <- make.bisse.fns(tree, dat) # this line is broken
+fns <- make.bisse.fns(tree, dat)
 registerDoParallel(cores=8)
 fits.ARDnotime <- fitFns(5, fns$ARD.notime, fns$tdList, res=NULL)
 
