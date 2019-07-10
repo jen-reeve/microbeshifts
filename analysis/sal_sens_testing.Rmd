@@ -1,0 +1,189 @@
+---
+title: "Uyeda Sensitivity Testing--Salinity"
+author: "Jen Reeve"
+date: "6/13/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r libraries}
+library(tidyverse)
+library(bayou)
+require(phytools)
+require(diversitree)
+require(geiger)
+require(devtools)
+require(testthat)
+require(roxygen2)
+require(rncl)
+require(foreach)
+require(doParallel)
+require(aRbor)
+require(optimx)
+require(treeplyr)
+require(truncdist)
+require(ouch)
+setwd("~/GitHub/microbeshifts/analysis")
+file_path<-"shiftfunctions.R"
+source(file_path)
+file_path<-"cyanofunctions.R"
+source(file_path)
+make.treedat <- function(tree, dat){
+  ## set branch lengths to by
+  #tree$edge.length <- tree$edge.length/1000
+  
+  ## Combine tree 
+  tdcy <- make.treedata(tree, dat, name_column=0)
+  rownames(tdcy$dat) <- tdcy$phy$tip.label
+  colnames(tdcy$dat) <- gsub("/", "_", colnames(tdcy$dat), fixed=TRUE)
+  nc <- ncol(tdcy$dat)
+  tdcyList <- lapply(1:nc, function(x) select(tdcy, x))
+  tdcyList <- lapply(1:nc, function(x) filter_(tdcyList[[x]], paste("!is.na(",names(tdcyList[[x]]$dat),")", sep="")))
+  treedat<-tdcy
+  treedat <- list(td=tdcy,tdList=tdcyList)
+  return(treedat)
+  
+}
+```
+
+## Import trees and data matrix
+```{r import}
+lbaFiles <- list.files("../data/Posterior Probability Sampling of Trees/Trees Exhibiting Long Branch Attraction/Posterior probability distribution of time trees/")
+lbaTrees <- lapply(lbaFiles,function(x) read.tree(paste("../data/Posterior Probability Sampling of Trees/Trees Exhibiting Long Branch Attraction/Posterior probability distribution of time trees/", x, sep="")))
+
+goodFiles <- list.files("../data/Posterior Probability Sampling of Trees/Trees Without Known Long Branch Attraction Artifacts/Posterior distribution of trees where branch lengths are scaled to age/")
+goodTrees <- lapply(goodFiles[grep("good", goodFiles)], function(x) read.tree(paste("../data/Posterior Probability Sampling of Trees/Trees Without Known Long Branch Attraction Artifacts/Posterior distribution of trees where branch lengths are scaled to age/", x, sep="")))
+cyanosTrees <- lapply(goodFiles[grep("Cyanos", goodFiles)], function(x) read.tree(paste("../data/Posterior Probability Sampling of Trees/Trees Without Known Long Branch Attraction Artifacts/Posterior distribution of trees where branch lengths are scaled to age/", x, sep="")))
+
+lba.ntips <- lapply(lbaTrees, function(x) unname(sapply(x, function(y) length(y$tip.label))))
+good.ntips <- lapply(goodTrees, function(x) unname(sapply(x, function(y) length(y$tip.label))))
+cyanos.ntips <- lapply(cyanosTrees, function(x) unname(sapply(x, function(y) length(y$tip.label))))
+
+lba.species <- unique(unlist(sapply(lbaTrees, function(x) x[[1]]$tip.label)))
+good.species <- unique(unlist(sapply(goodTrees, function(x) x[[1]]$tip.label)))
+cyanos.species <- unique(unlist(sapply(cyanosTrees, function(x) x[[1]]$tip.label)))
+all.species <- unique(c(lba.species, good.species, cyanos.species))
+
+dat <- clean.data()
+tree <- lbaTrees[[2]][[1]]
+trees <- list(goodTrees[[1]][1:2], goodTrees[[2]][1:2], goodTrees[[3]][1:2], goodTrees[[4]][1:2])
+
+tree.dat <- make.treedat(tree, dat)
+
+plot(tree.dat$td$phy)
+```
+
+```{r discrete mapping}
+sal_bin<-setNames(dat$Freshwater_habitat,rownames(dat))
+#ace(sal_bin[names(sal_bin) %in% tree$tip.label],tree,model="ARD",type="discrete")
+
+#mtree<-make.simmap(tree,sal_bin[names(sal_bin)%in%tree$tip.label],model="ARD")
+mtrees<-make.simmap(cyanosTrees[[1]][1],sal_bin[names(sal_bin)%in%cyanos.species],type="discrete",model="ARD",nsim=100)
+par(mfrow=c(10,10))
+cols<-setNames(c("#7570B3","#D95F02"),levels(as.factor(sal_bin)))
+null<-sapply(mtrees,plotSimmap,colors=cols,lwd=1,ftype="off")
+pd<-summary(mtrees)
+plot(pd,fsize=0.6,ftype="i",colors=cols,ylim=c(-2,Ntip(cyanosTrees[[1]][1])))
+add.simmap.legend(colors=cols[2:1],prompt=FALSE,x=0,y=-4,vertical=FALSE)
+
+obj<-densityMap(mtrees,states=levels(as.factor(sal_bin))[2:1],plot=FALSE)
+plot(obj,fsize=c(0,1),show.tip.label=FALSE)
+```
+
+
+## Testing with just salinity optima: quick and dirty
+```{r simple continuous salinity setup}
+dat_simp <- dat %>% 
+  mutate(sal_simp = case_when(Freshwater_habitat == 1  ~ 0, 
+                        Freshwater_habitat == 0 ~ 35,
+                        TRUE ~ 0))
+row.names(dat_simp) <- row.names(dat)
+
+simpsal<-setNames(dat_simp$sal_simp,rownames(dat_simp))
+
+cyanoindex<-names(simpsal)%in%cyanos.species
+```
+
+```{r salsimp with OUwie}
+# set up for OUwie
+ouwiedf<-data.frame(names(simpsal),simpsal,sal_bin,row.names = NULL)
+fitBM1<-OUwie(tree,ouwiedf,model="BM1")
+fitBMS<-OUwie(tree,ouwiedf,model="BMS")
+fitOUM<-OUwie(tree,ouwiedf,model="OUM")
+fitOUMV<-OUwie(tree,ouwiedf,model="OUMV")
+fitOUMA<-OUwie(tree,ouwiedf,model="OUMA")
+fitOUMVA<-OUwie(tree,ouwiedf,model="OUMVA")
+ouwie_aicc<-c(fitBM1$AICc,fitBMS$AICc,fitOUM$AICc,fitOUMV$AICc,fitOUMA$AICc,fitOUMVA$AICc)
+names(ouwie_aicc)<-c("fitBM1", "fitBMS", "fitOUM", "fitOUMV", "fitOUMA", "fitOUMVA")
+aic.w(ouwie_aicc)
+```
+
+```{r salsimp with bayou}
+prior <- make.prior(tree, dists=list(dalpha="dhalfcauchy", dsig2="dhalfcauchy",dsb="dsb", dk="cdpois", dtheta="dnorm"), param=list(dalpha=list(scale=1), dsig2=list(scale=1), dk=list(lambda=15, kmax=200), dsb=list(bmax=1,prob=1), dtheta=list(mean=mean(simpsal), sd=2)))
+
+fit1 <- bayou.makeMCMC(tree, simpsal[names(simpsal)%in%tree$tip.label], SE=0, model="OU", prior=prior, new.dir="~/Github/microbeshifts/analysis/bayou", plot.freq=5000, ticker.freq=1000,samp = 10)
+fit1$run(1000)
+```
+
+```{r load run bayou}
+chainOU <- fit1$load()
+chainOU <- set.burnin(chainOU, 0.3)
+summary(chainOU)
+plot(chainOU, auto.layout=FALSE)
+par(mfrow=c(2,2))
+#plotBayoupars(truepars, tree, main = "True parameters")
+plotSimmap.mcmc(chainOU, burnin = 0.3, pp.cutoff = 0.3)
+plotBranchHeatMap(tree, chainOU, "theta", burnin = 0.3, pal = cm.colors)
+phenogram.density(tree, simpsal, burnin = 0.3, chainOU, pp.cutoff = 0.3)
+```
+
+## Testing with just salinity optima: distributions
+```{r distribution based continuous salinity setup}
+dat_dist <- dat # replicate the dataset
+dat_dist$sal_dist <- c(rep(NA,length(dat_dist$Freshwater_habitat))) # make an empty salinity distribution column
+for (i in 1:length(dat_dist$Freshwater_habitat)){
+  if (dat_dist$Freshwater_habitat[i] == 1){
+    dat_dist$sal_dist[i] <- rtrunc(1,a=0,b=Inf,spec="norm",mean=0,sd=5) # truncated normal distribution so no negative salinities
+  }
+  if (dat_dist$Freshwater_habitat[i] == 0){
+    dat_dist$sal_dist[i] <- rtrunc(1,a=-Inf,b=Inf,spec="norm",mean=35,sd=4)
+  }
+} # loops over the dataframe and draws from one of two distributions to assign salinity optima based on habitat
+
+tree.dat <- make.treedat(tree,dat_dist)
+
+obj2<-contMap(tree.dat$td$phy,tree.dat$td[["sal_dist"]],plot=FALSE)
+plot(obj2,legend=0.7*max(nodeHeights(tree)))
+
+
+```
+
+## Simulating salinity through regime changes
+What happens if you start with an ancestor to cyanos that is fresh, allow for divergence, push through a selective pressure and then allow for divergence again
+
+Need to reformat the character data
+
+```{r fixing character formatting}
+nodes<-c((length(tree$tip.label)+1):(length(tree$tip.label)+length(tree$node.label)))
+
+tree.simp<-make.treedata(tree,dat_simp)
+tree_ouch<-ouchtree(
+  nodes = ouch_data$node,
+  ancestors=ouch_data$ancestor,
+  times=ouch_data$times)
+
+edges<-tree$edge
+edges<-edges[order(edges[,2]),]
+ancestors<-c(NA,edges[109:214,1],edges[1:108,1])
+
+ouch_data<-data.frame(node=c(as.character(nodes),tree$tip.label),species=c(rep(NA,length(tree$node.label)),tree$tip.label),sal=as.numeric(c(rep(NA,length(tree$node.label)),tree.simp$dat[["sal_simp"]])),ancestor=ancestors,times=tree_ouch@times,sal_discrete=c(rep(NA,length(tree$node.label)),tree.simp$dat[["Freshwater_habitat"]]))
+rownames(ouch_data)<-ouch_data$node
+```
+
+```{r}
+
+
+```
