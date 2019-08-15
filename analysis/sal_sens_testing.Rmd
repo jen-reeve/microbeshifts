@@ -20,6 +20,7 @@ require(testthat)
 require(roxygen2)
 require(rncl)
 require(foreach)
+library(phangorn)
 require(doParallel)
 require(aRbor)
 require(optimx)
@@ -75,6 +76,8 @@ tree.dat <- make.treedat(tree, dat)
 
 plot(tree.dat$td$phy)
 ```
+
+
 
 ```{r discrete mapping}
 sal_bin<-setNames(dat$Freshwater_habitat,rownames(dat))
@@ -152,6 +155,8 @@ for (i in 1:length(dat_dist$Freshwater_habitat)){
     dat_dist$sal_dist[i] <- rtrunc(1,a=-Inf,b=Inf,spec="norm",mean=35,sd=4)
   }
 } # loops over the dataframe and draws from one of two distributions to assign salinity optima based on habitat
+distsal<-setNames(dat_dist$sal_dist,rownames(dat_dist))
+
 
 tree.dat <- make.treedat(tree,dat_dist)
 
